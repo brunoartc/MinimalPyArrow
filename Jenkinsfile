@@ -239,6 +239,8 @@ node {
         mv pyarrow-files/pyarrow* ../python''', returnStdout: true)
         zip zipFile: fileName, archive: false, dir: './python',  overwrite: true
         archiveArtifacts artifacts: fileName
+
+        deleteDir()
         
     }
     
