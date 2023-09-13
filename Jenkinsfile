@@ -199,7 +199,7 @@ node {
 
                     rm -rf /output/pyarrow-files/
 
-                    rm /output/pyarrow-*.whl
+                    rm -f /output/pyarrow-*.whl
 
                     mv ./dist/pyarrow-*.whl /output/
 
