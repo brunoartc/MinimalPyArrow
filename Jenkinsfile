@@ -1,5 +1,8 @@
 #!/usr/bin/env groovy
 node {
+
+    def pyarrowVersion = "apache-arrow-13.0.0"
+
     stage("Build dockerfile") {
 
         echo "############################################################################"
@@ -66,7 +69,7 @@ node {
 
                     git clone \
                         --depth 1 \
-                        --branch apache-arrow-13.0.0 \
+                        --branch apache-arrow-12.0.0 \
                         --single-branch \
                         https://github.com/apache/arrow.git
                     
@@ -100,10 +103,9 @@ node {
                     cd $CPP_BUILD_DIR
                     
                     cmake -GNinja \
-                        -DCMAKE_BUILD_TYPE=DEBUG \
+                        -DCMAKE_BUILD_TYPE=MinSizeRel \
                         -DCMAKE_INSTALL_PREFIX=$ARROW_HOME \
                         -DCMAKE_INSTALL_LIBDIR=lib \
-                        -DCMAKE_UNITY_BUILD=ON \
                         -DARROW_PYTHON=ON \
                         -DARROW_PARQUET=ON \
                         -DARROW_DATASET=ON \
@@ -112,8 +114,8 @@ node {
                         -DARROW_FLIGHT=OFF \
                         -DARROW_GANDIVA=OFF \
                         -DARROW_ORC=OFF \
-                        -DARROW_CSV=ON \
-                        -DARROW_JSON=ON \
+                        -DARROW_CSV=OFF \
+                        -DARROW_JSON=OFF \
                         -DARROW_COMPUTE=ON \
                         -DARROW_FILESYSTEM=ON \
                         -DARROW_PLASMA=OFF \
@@ -164,8 +166,8 @@ node {
                     export PYARROW_WITH_PARQUET=1
                     export PYARROW_WITH_DATASET=1
                     export PYARROW_WITH_FILESYSTEM=1
-                    export PYARROW_WITH_CSV=1
-                    export PYARROW_WITH_JSON=1
+                    export PYARROW_WITH_CSV=0
+                    export PYARROW_WITH_JSON=0
                     export PYARROW_WITH_COMPUTE=1
                     export PYARROW_CMAKE_GENERATOR=Ninja
                     
@@ -197,11 +199,13 @@ node {
 
                     rm -rf /output/pyarrow-files/
 
+                    rm /output/pyarrow-*.whl
+
                     mv ./dist/pyarrow-*.whl /output/
 
-                    
-
                     mkdir /output/pyarrow-files/
+                    
+                    rm -rf output/pyarrow-files/*
 
                     python -m pip install /output/pyarrow-*.whl -t /output/pyarrow-files/
 
@@ -220,7 +224,7 @@ node {
         echo 'Cleanup files'
         echo "############################################################################"
 
-        def fileName = "apache-arrow-13.0.0"+"-minimal.zip"
+        def fileName = pyarrowVersion+"-minimal-0.4.zip"
 
         sh (script: '''
         ls -lah
@@ -229,9 +233,12 @@ node {
         ls -lah
         find pyarrow-files -name '*.so' -type f -exec strip "{}" \\;
         find pyarrow-files -wholename "*/tests/*" -type f -delete
-        find pyarrow-files -regex '^.*\\(__pycache__\\|\\.py[co]\\)$' -delete''', returnStdout: true)
-        zip zipFile: fileName, archive: false, dir: './output/pyarrow-files',  overwrite: true
-        archiveArtifacts artifacts: fileName
+        find pyarrow-files -regex '^.*\\(__pycache__\\|\\.py[co]\\)$' -delete
+        rm -rf ../python
+        mkdir ../python
+        mv pyarrow-files/pyarrow* ../python''', returnStdout: true)
+        zip zipFile: fileName, archive: false, dir: './python',  overwrite: true
+        echo 'archiveArtifacts artifacts: fileName'
         
     }
     
