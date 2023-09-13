@@ -238,7 +238,7 @@ node {
         mkdir ../python
         mv pyarrow-files/pyarrow* ../python''', returnStdout: true)
         zip zipFile: fileName, archive: false, dir: './python',  overwrite: true
-        echo 'archiveArtifacts artifacts: fileName'
+        archiveArtifacts artifacts: fileName
         
     }
     
